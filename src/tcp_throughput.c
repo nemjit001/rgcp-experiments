@@ -113,7 +113,7 @@ int data_send(char* remote_ip)
     if (ns < 0)
     {
         ns += 1000000000;
-        seconds++;
+        seconds--;
     }
 
     ssize_t ms = ns / 1000000;
@@ -221,7 +221,10 @@ int main(int argc, char** argv)
     if (argc < 2)
         return -1;
 
-    printf("---TCP THROUGHPUT---\n");
+    if (argc == 4)
+        printf("%s\tTCP THROUGHPUT\n", argv[3]);
+    else
+        printf("---\tTCP THROUGHPUT\t---\n");
 
     if (strcmp(argv[1], "send") == 0)
         return data_send(argv[2]);
