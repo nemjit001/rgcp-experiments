@@ -11,10 +11,14 @@ do
     ../src/tcp_throughput send 127.0.0.1 $i >> ../out/tcp_tp
 done
 
-for i in {1..30}
+for i in {1..3}
 do
     echo "Starting RGCP Test" $i
-    ../src/rgcp_throughput recv >> /dev/null &
+    for j in {1..10}
+    do
+        ../src/rgcp_throughput recv 127.0.0.1 TP_GROUP_$i >> /dev/null &
+    done
+
     sleep .25
     ../src/rgcp_throughput send 127.0.0.1 TP_GROUP_$i $i >> ../out/rgcp_tp
 done
