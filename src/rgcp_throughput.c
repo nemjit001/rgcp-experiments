@@ -13,20 +13,8 @@
 #define START_TOKEN 0xAA
 #define DATA_ARRAY_SIZE MiB_SIZE(1)
 
-#define SEND_RDY "send rdy\0"
-#define REMOTE_RDY "remote rdy\0"
-
-struct remote_ready_flag
-{
-    int m_remoteFd;
-    int m_bIsReady;
-    int m_bHasEchoed;
-};
-
-static uint8_t* data_array = NULL;
-static int remote_ready_idx = 0;
 static int remote_count = 0;
-static struct remote_ready_flag* remote_ready_array = NULL;
+static uint8_t* data_array = NULL;
 
 ssize_t generate_data_array(size_t size_bytes)
 {
@@ -53,32 +41,6 @@ int validate_buffers(uint8_t* buffA, uint8_t* buffB, size_t buffALength, size_t 
         if ((buffA[i] ^ buffB[i]) != 0x00)
         {
             printf("Invalid token @ %zu [0x%x != 0x%x]\n", i, buffA[i], buffB[i]);
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
-int all_remotes_ready()
-{
-    for (int i = 0; i < remote_count; i++)
-    {
-        if (remote_ready_array[i].m_remoteFd == -1 || !remote_ready_array[i].m_bIsReady)
-        {
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
-int all_remotes_echoed()
-{
-    for (int i = 0; i < remote_count; i++)
-    {
-        if (remote_ready_array[i].m_remoteFd == -1 || !remote_ready_array[i].m_bHasEchoed)
-        {
             return 0;
         }
     }
@@ -128,6 +90,14 @@ int connect_to_grp(int fd, char* groupname)
     return 1;
 }
 
+void await_remote_connections(int fd, int expected_count)
+{
+    while (rgcp_peer_count(fd) != expected_count)
+    {
+        usleep(5000);
+    }
+}
+
 int data_send(char* middleware_ip, char* middleware_group)
 {
     if (generate_data_array(DATA_ARRAY_SIZE) < 0)
@@ -151,29 +121,12 @@ int data_send(char* middleware_ip, char* middleware_group)
     }  
         
     printf("connected to group!\n");
-    rgcp_send(fd, SEND_RDY, strlen(SEND_RDY), 0);
+    
+    await_remote_connections(fd, remote_count);
 
-    while(!all_remotes_ready())
-    {
-        rgcp_recv_data_t* p_recv_data = NULL;
-        ssize_t recv_res = rgcp_recv(fd, &p_recv_data);
-
-        if (recv_res < 0)
-            goto error;
-
-        for (int i = 0; i < recv_res; i++)
-        {
-            if (strcmp("rdy", (char*)p_recv_data[i].m_pDataBuffer) == 0)
-            {
-                remote_ready_array[remote_ready_idx].m_remoteFd = p_recv_data[i].m_sourceFd;
-                remote_ready_array[remote_ready_idx].m_bIsReady = 1;
-                remote_ready_idx++;
-            }
-        }
-    }
+    printf("Remotes ready\n");
 
     ssize_t send_res = rgcp_send(fd, (char*)data_array, DATA_ARRAY_SIZE, 0);
-
     printf("sent %ld bytes\n", send_res);
 
     if (send_res < 0)
@@ -216,7 +169,10 @@ int data_recv(char* middleware_ip, char* middleware_group)
         
     printf("connected to group!\n");
 
-    // wait until send rdy, send back ready
+    sleep(remote_count);
+
+    printf("%ld\n", rgcp_peer_count(fd));
+
     // keep receiving until remote stops sending
     // assert that the buffer is correct size
     // echo bytes back to everyone else in the group
@@ -241,12 +197,6 @@ int main(int argc, char** argv)
         return -1;
 
     remote_count = atoi(argv[4]);
-    remote_ready_array  = calloc(remote_count, sizeof(struct remote_ready_flag));
-
-    for (int i = 0; i < remote_count; i++)
-    {
-        remote_ready_array[i].m_remoteFd = -1;
-    }
 
     if (argc == 6)
         printf("%s\tRGCP THROUGHPUT\n", argv[5]);
