@@ -16,6 +16,13 @@
 static int remote_count = 0;
 static uint8_t* data_array = NULL;
 
+struct recv_info
+{
+    int m_sourceFd;
+    uint8_t* m_pBuffer;
+    size_t m_bufferSize;
+};
+
 ssize_t generate_data_array(size_t size_bytes)
 {
     data_array = calloc(size_bytes, sizeof(uint8_t));
@@ -46,6 +53,23 @@ int validate_buffers(uint8_t* buffA, uint8_t* buffB, size_t buffALength, size_t 
     }
 
     return 1;
+}
+
+struct timespec get_delta(struct timespec A, struct timespec B)
+{
+    ssize_t seconds = B.tv_sec - A.tv_sec;
+    ssize_t ns = (B.tv_nsec - A.tv_nsec);
+
+    if (ns < 0)
+    {
+        ns += 1000000000;
+        seconds--;
+    }
+
+    struct timespec res;
+    res.tv_nsec = ns;
+    res.tv_sec = seconds;
+    return res;
 }
 
 int create_socket(char* ip)
@@ -126,13 +150,60 @@ int data_send(char* middleware_ip, char* middleware_group)
 
     printf("Remotes ready\n");
 
+    struct timespec start_rtt;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start_rtt);
     ssize_t send_res = rgcp_send(fd, (char*)data_array, DATA_ARRAY_SIZE, 0);
-    printf("sent %ld bytes\n", send_res);
 
     if (send_res < 0)
         goto error;
 
-    // keep receiving until remotes stop sending
+    struct recv_info* p_recv_infos = calloc(remote_count, sizeof(struct recv_info));
+    size_t recv_info_idx = 0;
+    ssize_t recv_count = 0;
+
+    do
+    {
+        rgcp_recv_data_t *p_recv_data = NULL;
+        recv_count = rgcp_recv(fd, &p_recv_data);
+
+        if (recv_count > 0)
+            printf("Recvd %ld buffers\n", recv_count);
+
+        for (ssize_t i = 0; i < recv_count; i++)
+        {
+            printf("(%d %lu)\n", p_recv_data[i].m_sourceFd, p_recv_data[i].m_bufferSize);
+
+            p_recv_infos[recv_info_idx].m_sourceFd = p_recv_data[i].m_sourceFd;
+            p_recv_infos[recv_info_idx].m_pBuffer = calloc(p_recv_data[i].m_bufferSize, sizeof(uint8_t));
+            p_recv_infos[recv_info_idx].m_bufferSize = p_recv_data[i].m_bufferSize;
+            memcpy(p_recv_infos[recv_info_idx].m_pBuffer, p_recv_data[i].m_pDataBuffer, p_recv_data[i].m_bufferSize);
+            recv_info_idx++;
+        }
+        
+        if (recv_count > 0)
+        {
+            rgcp_free_recv_data(p_recv_data, recv_count);
+        }
+
+    } while(recv_info_idx < remote_count);
+
+    struct timespec end_rtt;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end_rtt);
+
+    printf("Validating Buffers\n");
+
+    for (int i = 0; i < remote_count; i++)
+    {
+        if (validate_buffers(data_array, p_recv_infos[i].m_pBuffer, DATA_ARRAY_SIZE, p_recv_infos[i].m_bufferSize) == 0)
+        {
+            printf("Buffer Invalid @ idx %d\n", i);
+        }
+
+        free(p_recv_infos[i].m_pBuffer);
+    }
+
+    struct timespec rtt = get_delta(start_rtt, end_rtt);
+    printf("Buffers Valid @ %lus:%lums\n", rtt.tv_sec, rtt.tv_nsec / 1000000);
 
     rgcp_disconnect(fd);
     rgcp_close(fd);
@@ -169,13 +240,66 @@ int data_recv(char* middleware_ip, char* middleware_group)
         
     printf("connected to group!\n");
 
-    sleep(remote_count);
+    await_remote_connections(fd, remote_count);
 
     printf("%ld\n", rgcp_peer_count(fd));
 
-    // keep receiving until remote stops sending
-    // assert that the buffer is correct size
+    uint8_t *total_recv_buffer = NULL;
+    size_t recv_buffer_size = 0;
+    ssize_t recv_count = 0;
+    do
+    {
+        rgcp_recv_data_t *p_recv_data = NULL;
+        recv_count = rgcp_recv(fd, &p_recv_data);
+
+        if (recv_count > 0)
+            printf("Recvd %ld buffers\n", recv_count);
+
+        rgcp_recv_data_t* p_actual_data = NULL;
+        // find the highest source fd, last connected client is sender
+        for (ssize_t i = 0; i < recv_count; i++)
+        {
+            if (p_actual_data == NULL || p_recv_data->m_sourceFd < p_recv_data[i].m_sourceFd)
+                p_actual_data = &p_recv_data[i];
+        }
+
+        if (recv_count == 0)
+            continue;
+        
+        if (total_recv_buffer == NULL)
+        {
+            total_recv_buffer = calloc(p_actual_data->m_bufferSize, sizeof(uint8_t));
+            memcpy(total_recv_buffer, p_actual_data->m_pDataBuffer, p_actual_data->m_bufferSize);
+        }
+        else
+        {
+            uint8_t* p_temp = realloc(total_recv_buffer, (recv_buffer_size + p_actual_data->m_bufferSize) * sizeof(uint8_t));
+
+            if (p_temp == NULL)
+                goto error;
+
+            total_recv_buffer = p_temp;
+            memcpy(total_recv_buffer + recv_buffer_size, p_actual_data->m_pDataBuffer, p_actual_data->m_bufferSize);
+        }
+
+        recv_buffer_size += p_actual_data->m_bufferSize;
+        rgcp_free_recv_data(p_recv_data, recv_count);
+    } while(recv_buffer_size != DATA_ARRAY_SIZE);
+
+    printf("Total recv buff size: %zu bytes\n", recv_buffer_size);
+
+    if (recv_buffer_size != DATA_ARRAY_SIZE)
+        goto error;
+
     // echo bytes back to everyone else in the group
+    ssize_t send_res = rgcp_send(fd, (char*)total_recv_buffer, recv_buffer_size, 0);
+
+    if (send_res < 0)
+        goto error;
+
+    printf("Echoed %ld bytes\n", send_res);
+
+    sleep(remote_count);
 
     rgcp_disconnect(fd);
     rgcp_close(fd);
