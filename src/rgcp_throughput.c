@@ -11,7 +11,7 @@
 
 //#define DEBUG_PRINTS
 #define START_TOKEN 0xAA
-#define DATA_ARRAY_SIZE MiB_SIZE(1)
+#define DATA_ARRAY_SIZE MiB_SIZE(5)
 
 static int remote_count = 0;
 static uint8_t* data_array = NULL;
@@ -157,9 +157,13 @@ int data_send(char* middleware_ip, char* middleware_group)
     if (send_res < 0)
         goto error;
 
+    printf("Send done\n");
+
     struct recv_info* p_recv_infos = calloc(remote_count, sizeof(struct recv_info));
     size_t recv_info_idx = 0;
     ssize_t recv_count = 0;
+
+    printf("Starting recv\n");
 
     do
     {
@@ -243,6 +247,8 @@ int data_recv(char* middleware_ip, char* middleware_group)
     await_remote_connections(fd, remote_count);
 
     printf("%ld\n", rgcp_peer_count(fd));
+
+    printf("Starting recv\n");
 
     uint8_t *total_recv_buffer = NULL;
     size_t recv_buffer_size = 0;

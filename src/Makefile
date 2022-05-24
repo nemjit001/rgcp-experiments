@@ -4,7 +4,7 @@ CC=gcc
 CFLAGS=-g -Wall -Werror -UDEBUG
 LDLIBS=-lrgcp
 
-all: tcp_throughput rgcp_throughput
+all: tcp_throughput rgcp_throughput rgcp_stability_client
 
 clean:
 	rm -f *.o
@@ -15,3 +15,5 @@ tcp_throughput: tcp_throughput.o
 rgcp_throughput.o: rgcp_throughput.c
 rgcp_throughput: rgcp_throughput.o
 
+rgcp_stability_client.o: rgcp_stability_client.c
+rgcp_stability_client: rgcp_stability_client.o
