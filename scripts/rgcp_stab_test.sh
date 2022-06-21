@@ -50,7 +50,7 @@ function DoDasTest()
     for j in `seq 1 $client_count`
     do
         echo "Starting Das5 Client" $j "out of" $client_count
-        srun ../src/rgcp_stability_client 60 1000 $j STAB_TEST_$i
+        srun ../src/rgcp_stability_client 60 1000 $j STAB_TEST_$i >> ../out/rgcp_stab_peers_$i/peer_$j
         sleep .1
     done
 }
