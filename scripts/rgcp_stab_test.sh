@@ -1,8 +1,11 @@
 #! /bin/bash
 
 rm -r ../out/rgcp_stab_peers_*
-NumClients=30
+NumClients=5
 RunLocal=1
+Runtime=10
+ConnectProb=1000
+Cycles=1
 
 if [ ! -z $1 ]
 then
@@ -14,9 +17,24 @@ then
     RunLocal=$(($2))
 fi
 
+if [ ! -z $3 ]
+then
+    Runtime=$(($3))
+fi
+
+if [ ! -z $4 ]
+then
+    ConnectProb=$(($4))
+fi
+
+if [ ! -z $5 ]
+then
+    Cycles=$(($5))
+fi
+
 function DoLocalTest()
 {
-    if [ $# -ne 1 ]
+    if [ $# -ne 3 ]
     then
         exit 1
     fi
@@ -29,9 +47,9 @@ function DoLocalTest()
 
         if [ "$j" -lt "$NumClients" ]
         then
-            ../src/rgcp_stability_client 60 1000 $j STAB_TEST_$i >> ../out/rgcp_stab_peers_$i/peer_$j &
+            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i >> ../out/rgcp_stab_peers_$i/peer_$j &
         else
-            ../src/rgcp_stability_client 60 1000 $j STAB_TEST_$i >> ../out/rgcp_stab_peers_$i/peer_$j
+            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i >> ../out/rgcp_stab_peers_$i/peer_$j
         fi
 
         sleep .1
@@ -40,7 +58,7 @@ function DoLocalTest()
 
 function DoDasTest()
 {
-    if [ $# -ne 1 ]
+    if [ $# -ne 3 ]
     then
         exit 1
     fi
@@ -50,12 +68,12 @@ function DoDasTest()
     for j in `seq 1 $client_count`
     do
         echo "Starting Das5 Client" $j "out of" $client_count
-        srun ../src/rgcp_stability_client 60 1000 $j STAB_TEST_$i
+        srun ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i
         sleep .1
     done
 }
 
-for i in {1..3}
+for i in `seq 1 $Cycles`
 do
     echo "Starting RGCP Stability Test" $i "(" $NumClients $RunLocal ")"
 
@@ -63,8 +81,8 @@ do
     
     if [ $RunLocal -eq 1 ]
     then
-        DoLocalTest $NumClients
+        DoLocalTest $NumClients $Runtime $ConnectProb
     else
-        DoDasTest $NumClients
+        DoDasTest $NumClients $Runtime $ConnectProb
     fi
 done

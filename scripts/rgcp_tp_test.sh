@@ -6,6 +6,8 @@ rm ../out/peers/*
 for i in {1..1}
 do
     echo "Starting RGCP Throughput Test" $i
+
+    [ -d ../out/peers_$i ] || mkdir -p ../out/peers_$i
     
     for j in {1..5}
     do
