@@ -11,7 +11,7 @@
 
 //#define DEBUG_PRINTS
 #define START_TOKEN 0xAA
-#define DATA_ARRAY_SIZE MiB_SIZE(5)
+#define DATA_ARRAY_SIZE MiB_SIZE(10)
 
 static int remote_count = 0;
 static uint8_t* data_array = NULL;
@@ -152,7 +152,7 @@ int data_send(char* middleware_ip, char* middleware_group)
 
     struct timespec start_rtt;
     clock_gettime(CLOCK_MONOTONIC_RAW, &start_rtt);
-    ssize_t send_res = rgcp_send(fd, (char*)data_array, DATA_ARRAY_SIZE, 0);
+    ssize_t send_res = rgcp_send(fd, data_array, DATA_ARRAY_SIZE, 0);
 
     if (send_res < 0)
         goto error;
@@ -195,15 +195,26 @@ int data_send(char* middleware_ip, char* middleware_group)
     clock_gettime(CLOCK_MONOTONIC_RAW, &end_rtt);
 
     printf("Validating Buffers\n");
+    int bBuffersValid = 1;
 
     for (int i = 0; i < remote_count; i++)
     {
         if (validate_buffers(data_array, p_recv_infos[i].m_pBuffer, DATA_ARRAY_SIZE, p_recv_infos[i].m_bufferSize) == 0)
         {
-            printf("Buffer Invalid @ idx %d\n", i);
+            printf("Buffer %d Invalid\n", i);
+            bBuffersValid = 0;
         }
 
         free(p_recv_infos[i].m_pBuffer);
+    }
+
+    if (!bBuffersValid)
+    {
+        rgcp_disconnect(fd);
+        rgcp_close(fd);
+        free(data_array);
+
+        return -1;
     }
 
     struct timespec rtt = get_delta(start_rtt, end_rtt);
@@ -298,7 +309,7 @@ int data_recv(char* middleware_ip, char* middleware_group)
         goto error;
 
     // echo bytes back to everyone else in the group
-    ssize_t send_res = rgcp_send(fd, (char*)total_recv_buffer, recv_buffer_size, 0);
+    ssize_t send_res = rgcp_send(fd, total_recv_buffer, recv_buffer_size, 0);
 
     if (send_res < 0)
         goto error;
