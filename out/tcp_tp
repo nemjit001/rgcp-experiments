@@ -1,122 +1,60 @@
 1	TCP THROUGHPUT
-<<<<<<< HEAD
-Buffers Valid @ 3s:975ms
+Buffers Valid @ 3s:973ms
 2	TCP THROUGHPUT
-Buffers Valid @ 1s:490ms
+Buffers Valid @ 1s:430ms
 3	TCP THROUGHPUT
-Buffers Valid @ 1s:466ms
+Buffers Valid @ 1s:458ms
 4	TCP THROUGHPUT
-Buffers Valid @ 1s:358ms
+Buffers Valid @ 1s:422ms
 5	TCP THROUGHPUT
-Buffers Valid @ 1s:437ms
-6	TCP THROUGHPUT
-Buffers Valid @ 1s:400ms
-7	TCP THROUGHPUT
-Buffers Valid @ 2s:244ms
-8	TCP THROUGHPUT
-Buffers Valid @ 1s:513ms
-9	TCP THROUGHPUT
-Buffers Valid @ 1s:503ms
-10	TCP THROUGHPUT
-Buffers Valid @ 1s:553ms
-11	TCP THROUGHPUT
-Buffers Valid @ 1s:442ms
-12	TCP THROUGHPUT
-Buffers Valid @ 1s:412ms
-13	TCP THROUGHPUT
-Buffers Valid @ 1s:424ms
-14	TCP THROUGHPUT
-Buffers Valid @ 1s:450ms
-15	TCP THROUGHPUT
-Buffers Valid @ 1s:415ms
-16	TCP THROUGHPUT
-Buffers Valid @ 1s:397ms
-17	TCP THROUGHPUT
-Buffers Valid @ 1s:412ms
-18	TCP THROUGHPUT
 Buffers Valid @ 1s:396ms
-19	TCP THROUGHPUT
-Buffers Valid @ 1s:526ms
-20	TCP THROUGHPUT
-Buffers Valid @ 1s:469ms
-21	TCP THROUGHPUT
-Buffers Valid @ 1s:493ms
-22	TCP THROUGHPUT
-Buffers Valid @ 1s:389ms
-23	TCP THROUGHPUT
-Buffers Valid @ 1s:394ms
-24	TCP THROUGHPUT
-Buffers Valid @ 1s:926ms
-25	TCP THROUGHPUT
-Buffers Valid @ 1s:417ms
-26	TCP THROUGHPUT
-Buffers Valid @ 1s:303ms
-27	TCP THROUGHPUT
-Buffers Valid @ 1s:342ms
-28	TCP THROUGHPUT
-Buffers Valid @ 1s:375ms
-29	TCP THROUGHPUT
-Buffers Valid @ 1s:295ms
-30	TCP THROUGHPUT
-Buffers Valid @ 1s:248ms
-=======
-Buffers Valid @ 0s:492ms
-2	TCP THROUGHPUT
-Buffers Valid @ 0s:466ms
-3	TCP THROUGHPUT
-Buffers Valid @ 0s:445ms
-4	TCP THROUGHPUT
-Buffers Valid @ 0s:477ms
-5	TCP THROUGHPUT
-Buffers Valid @ 0s:491ms
 6	TCP THROUGHPUT
-Buffers Valid @ 0s:470ms
+Buffers Valid @ 1s:372ms
 7	TCP THROUGHPUT
-Buffers Valid @ 0s:442ms
+Buffers Valid @ 1s:263ms
 8	TCP THROUGHPUT
-Buffers Valid @ 0s:494ms
+Buffers Valid @ 1s:321ms
 9	TCP THROUGHPUT
-Buffers Valid @ 0s:478ms
+Buffers Valid @ 1s:354ms
 10	TCP THROUGHPUT
-Buffers Valid @ 0s:446ms
+Buffers Valid @ 1s:242ms
 11	TCP THROUGHPUT
-Buffers Valid @ 0s:514ms
+Buffers Valid @ 1s:317ms
 12	TCP THROUGHPUT
-Buffers Valid @ 0s:495ms
+Buffers Valid @ 1s:306ms
 13	TCP THROUGHPUT
-Buffers Valid @ 0s:446ms
+Buffers Valid @ 1s:248ms
 14	TCP THROUGHPUT
-Buffers Valid @ 0s:441ms
+Buffers Valid @ 1s:269ms
 15	TCP THROUGHPUT
-Buffers Valid @ 0s:447ms
+Buffers Valid @ 1s:235ms
 16	TCP THROUGHPUT
-Buffers Valid @ 0s:442ms
+Buffers Valid @ 1s:303ms
 17	TCP THROUGHPUT
-Buffers Valid @ 0s:480ms
+Buffers Valid @ 1s:271ms
 18	TCP THROUGHPUT
-Buffers Valid @ 0s:451ms
+Buffers Valid @ 1s:271ms
 19	TCP THROUGHPUT
-Buffers Valid @ 0s:462ms
+Buffers Valid @ 1s:396ms
 20	TCP THROUGHPUT
-Buffers Valid @ 0s:451ms
+Buffers Valid @ 1s:367ms
 21	TCP THROUGHPUT
-Buffers Valid @ 0s:446ms
+Buffers Valid @ 1s:321ms
 22	TCP THROUGHPUT
-Buffers Valid @ 0s:458ms
+Buffers Valid @ 1s:272ms
 23	TCP THROUGHPUT
-Buffers Valid @ 0s:460ms
+Buffers Valid @ 1s:329ms
 24	TCP THROUGHPUT
-Buffers Valid @ 0s:486ms
+Buffers Valid @ 1s:182ms
 25	TCP THROUGHPUT
-Buffers Valid @ 0s:519ms
+Buffers Valid @ 1s:295ms
 26	TCP THROUGHPUT
-Buffers Valid @ 0s:468ms
+Buffers Valid @ 1s:329ms
 27	TCP THROUGHPUT
-Buffers Valid @ 0s:464ms
+Buffers Valid @ 1s:195ms
 28	TCP THROUGHPUT
-Buffers Valid @ 0s:493ms
+Buffers Valid @ 1s:200ms
 29	TCP THROUGHPUT
-Buffers Valid @ 0s:451ms
+Buffers Valid @ 1s:259ms
 30	TCP THROUGHPUT
-Buffers Valid @ 0s:483ms
->>>>>>> 534653fda78564a7248cdc353d3309fef4449bb8
+Buffers Valid @ 1s:290ms
