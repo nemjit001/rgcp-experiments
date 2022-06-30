@@ -2,13 +2,13 @@
 
 CC=gcc
 CFLAGS=-g -Wall -Werror -UDEBUG -I${HOME}/include/
-LDFLAGS=-L${HOME}/libs/
-LDLIBS=-lrgcp
+# LDFLAGS=-L${HOME}/libs/
+LDLIBS=-lrgcp -lpthread
 
 all: tcp_throughput rgcp_throughput rgcp_stability_client
 
 clean:
-	rm -f *.o
+	${RM} *.o
 
 tcp_throughput.o: tcp_throughput.c
 tcp_throughput: tcp_throughput.o
