@@ -1,9 +1,9 @@
 .PHONY: all clean
 
 CC=gcc
-CFLAGS=-g -Wall -Werror -UDEBUG -I${HOME}/include/
+CFLAGS=-g -Wall -Werror #-I${HOME}/include/
 # LDFLAGS=-L${HOME}/libs/
-LDLIBS=-lrgcp -lpthread
+LDLIBS=-lrgcp
 
 all: tcp_throughput rgcp_throughput rgcp_stability_client
 

@@ -265,24 +265,37 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
     int fd = create_socket(p_ip_addr, port);
 
     if (fd < 0)
+    {
+        printf("failed to create socket\n");
         return -1;
+    }
 
     if (connect_to_group(fd, GROUP_NAME) < 0)
     {
+        printf("failed to connect to group\n");
         rgcp_close(fd);
         return -1;
     }
 
     if (generate_data_array(DATA_ARRAY_SIZE(client_count - 1)) < 0)
+    {
+        printf("failed to generate array\n");
         goto error;
+    }
 
     if (await_client_count(fd, client_count, WAIT_TIMEOUT_SECONDS) == 0)
+    {
+        printf("not enough clients\n");
         goto error;
+    }
 
-    if (rgcp_send(fd, SENDER_MSG, strlen(SENDER_MSG), 0) < 0)
+    if (rgcp_send(fd, SENDER_MSG, strlen(SENDER_MSG), 0, NULL) < 0)
+    {
+        printf("SND fail\n");
         goto error;
+    }
 
-    if (rgcp_send(fd, g_p_data_array, DATA_ARRAY_SIZE(client_count - 1), 0) < 0)
+    if (rgcp_send(fd, g_p_data_array, DATA_ARRAY_SIZE(client_count - 1), 0, NULL) < 0)
         goto error;
 
     // now we can receive
@@ -296,7 +309,10 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
             recv_count = rgcp_recv(fd, &p_recv_datas);
 
             if (recv_count < 0)
+            {
+                printf("recv_count < 0\n");
                 goto error;
+            }
             
             if (recv_count == 0)
                 continue;
@@ -331,6 +347,8 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
     return 0;
 
 error:
+    printf("Error\n");
+
     if (g_p_data_array)
         free(g_p_data_array);
 
@@ -339,28 +357,13 @@ error:
     return -1;
 }
 
-void* concurrent_recv_thread(void* param)
-{
-    int fd = *(int*)param;
-
-    ssize_t recv_count = 0;
-    do 
-    {
-        rgcp_recv_data_t* pRecvDatas = NULL;
-        recv_count = rgcp_recv(fd, &pRecvDatas);
-        rgcp_free_recv_data(pRecvDatas, recv_count);
-
-        printf("\t%ld\n", recv_count);
-    } while (recv_count >= 0 && !g_b_recv_done);
-
-    return NULL;
-}
-
 int recv_client(char* p_ip_addr, char* p_port, int client_count)
 {
     printf("Starting Recv Client...\n");
     int port = atoi(p_port);
     int fd = create_socket(p_ip_addr, port);
+    rgcp_unicast_mask_t send_mask;
+    send_mask.m_targetFd = -1;
 
     if (fd < 0)
         return -1;
@@ -403,6 +406,7 @@ int recv_client(char* p_ip_addr, char* p_port, int client_count)
     }
 
     printf("Sender is: %d\n", g_send_fd);
+    send_mask.m_targetFd = g_send_fd;
 
     {
         rgcp_recv_data_t* p_recv_datas = NULL;
@@ -444,18 +448,11 @@ int recv_client(char* p_ip_addr, char* p_port, int client_count)
 
     printf("Received buffer @ %p (%u bytes)!\n", g_p_data_array, DATA_ARRAY_SIZE(client_count - 1));
 
-    pthread_t recv_thread;
-    if (pthread_create(&recv_thread, NULL, concurrent_recv_thread, &fd) < 0)
-        goto error;
-
-    if (rgcp_send(fd, g_p_data_array, DATA_ARRAY_SIZE(client_count - 1), 0) < 0)
+    if (rgcp_send(fd, g_p_data_array, DATA_ARRAY_SIZE(client_count - 1), RGCP_SEND_UNICAST, &send_mask) < 0)
         goto error;
 
     printf("Sent buffer\n");
     g_b_recv_done = 1;
-
-    if (pthread_join(recv_thread, NULL) < 0)
-        goto error;
 
     free(g_p_data_array);
     rgcp_disconnect(fd);
@@ -465,6 +462,8 @@ int recv_client(char* p_ip_addr, char* p_port, int client_count)
     return 0;
 
 error:
+    printf("Error\n");
+
     if (g_p_data_array)
         free(g_p_data_array);
 

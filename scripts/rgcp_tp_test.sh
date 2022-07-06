@@ -22,14 +22,14 @@ do
 
     ../src/rgcp_throughput setup
     echo "Starting Send Peer"
-    ../src/rgcp_throughput send ${ClientCount} > ../out/rgcp_tp_$i &
+    ../src/rgcp_throughput send ${ClientCount} &#> ../out/rgcp_tp_$i &
     sleep .1
 
     SeqCount=`expr $ClientCount - 1`
     for j in `seq 1 ${SeqCount}`
     do
         echo "Starting Recv Peer" $j
-        ../src/rgcp_throughput recv ${ClientCount} &# > ../out/peers/peer_$j &
+        ../src/rgcp_throughput recv ${ClientCount} > ../out/peers/peer_$j &
         sleep .1
     done
 done
