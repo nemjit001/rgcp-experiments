@@ -15,10 +15,11 @@
 
 #define GROUP_NAME "RGCP_TP_TEST"
 #define SENDER_MSG "SND"
+#define END_MSG "END"
 
 #define WAIT_TIMEOUT_SECONDS 10
 #define DATA_ARRAY_START_TOKEN 0xAA
-#define DATA_ARRAY_SIZE(peer_count) ((uint32_t)(GiB_SIZE(1) / (peer_count)))
+#define DATA_ARRAY_SIZE(peer_count) (uint32_t)((uint32_t)GiB_SIZE(1) / peer_count)
 
 struct client_buff_data
 {
@@ -191,7 +192,7 @@ int buffers_equal(uint8_t* p_buffA, uint8_t* p_buffB, size_t buffASize, size_t b
 {
     if (buffASize != buffBSize)
     {
-        printf("Diff on Buffer Size [%ld != %ld]\n", buffASize, buffBSize);
+        printf("\tDiff on Buffer Size [%ld != %ld]\n", buffASize, buffBSize);
         return 0;
     }
 
@@ -199,7 +200,15 @@ int buffers_equal(uint8_t* p_buffA, uint8_t* p_buffB, size_t buffASize, size_t b
     {
         if ((p_buffA[i] ^ p_buffB[i]) != 0)
         {
-            printf("Diff on idx %ld [%X != %X]\n", i, p_buffA[i], p_buffB[i]);
+            printf("\tDiff on idx %ld [%X %X %X] vs [%X %X %X]\n",
+                i,
+                (i > 0) ? p_buffA[i - 1] : 0x0,
+                p_buffA[i],
+                (i < buffASize - 1) ? p_buffA[i + 1] : 0x0,
+                (i > 0) ? p_buffB[i - 1] : 0x0,
+                p_buffB[i],
+                (i < buffASize - 1) ? p_buffB[i + 1] : 0x0
+            );
             return 0;
         }
     }
@@ -336,6 +345,9 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
     else
         printf("Buffers Not Valid\n");
 
+    if (rgcp_send(fd, END_MSG, strlen(END_MSG), 0, NULL) < 0)
+        goto error;
+
     if (await_client_count(fd, 1, WAIT_TIMEOUT_SECONDS) == 0)
         goto error;
 
@@ -453,6 +465,29 @@ int recv_client(char* p_ip_addr, char* p_port, int client_count)
 
     printf("Sent buffer\n");
     g_b_recv_done = 1;
+
+    {
+        rgcp_recv_data_t* p_recv_datas = NULL;
+        ssize_t recv_count = 0;
+        int b_end_found = 0;
+        do
+        {
+            recv_count = rgcp_recv(fd, &p_recv_datas);
+            if (recv_count < 0)
+                goto error;
+
+            if (recv_count == 0)
+                continue;
+
+            for (ssize_t i = 0; i < recv_count; i++)
+            {
+                if (strncmp((char*)p_recv_datas[i].m_pDataBuffer, END_MSG, p_recv_datas[i].m_bufferSize) == 0)
+                    b_end_found = 1;
+            }
+
+            rgcp_free_recv_data(p_recv_datas, recv_count);
+        } while(recv_count >= 0 && !b_end_found);
+    }
 
     free(g_p_data_array);
     rgcp_disconnect(fd);
