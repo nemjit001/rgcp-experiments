@@ -1,8 +1,5 @@
 #! /bin/bash
 
-rm ../out/rgcp_tp_*
-rm ../out/peers/*
-
 ClientCount=5
 Iterations=1
 
@@ -20,16 +17,19 @@ for i in `seq 1 $Iterations`
 do
     echo "Starting RGCP Throughput Test" $i
 
+    [ -d ../out/tp_peers_$i\_$ClientCount ] || mkdir -p ../out/tp_peers_$i\_$ClientCount
+
     ../src/rgcp_throughput setup
-    echo "Starting Send Peer"
-    ../src/rgcp_throughput send ${ClientCount} &#> ../out/rgcp_tp_$i &
-    sleep .1
 
     SeqCount=`expr $ClientCount - 1`
     for j in `seq 1 ${SeqCount}`
     do
         echo "Starting Recv Peer" $j
-        ../src/rgcp_throughput recv ${ClientCount} > ../out/peers/peer_$j &
+        ../src/rgcp_throughput recv ${ClientCount} > ../out/tp_peers_$i\_$ClientCount/peer_$j &
         sleep .1
     done
+
+    echo "Starting Send Peer"
+    ../src/rgcp_throughput send ${ClientCount} > ../out/rgcp_tp_$i\_$ClientCount
+    sleep .1
 done

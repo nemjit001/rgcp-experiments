@@ -4,14 +4,14 @@
 #include <string.h>
 #include <time.h>
 
-// #define RGCP_SOCKET_HEARTBEAT_PERIOD_SECONDS 30
-
 #include <pthread.h>
 #include <rgcp/rgcp.h>
 
 #define KiB_SIZE(kb) (kb << 10)
 #define MiB_SIZE(mb) (KiB_SIZE(mb) << 10)
 #define GiB_SIZE(gb) (MiB_SIZE(gb) << 10)
+
+// #define DEBUG_PRINTS
 
 #define GROUP_NAME "RGCP_TP_TEST"
 #define SENDER_MSG "SND"
@@ -181,7 +181,9 @@ int client_array_complete(int client_count)
 
     for (size_t i = 0; i < g_client_buff_size; i++)
     {
-        printf("%d: %p %lu\n", g_p_client_buffers[i].m_fd, g_p_client_buffers[i].m_p_buffer, g_p_client_buffers[i].m_buffersize);
+        #ifdef DEBUG_PRINTS
+            printf("%d: %p %lu\n", g_p_client_buffers[i].m_fd, g_p_client_buffers[i].m_p_buffer, g_p_client_buffers[i].m_buffersize);
+        #endif
         b_complete = b_complete && ((g_p_client_buffers[i].m_fd != 0) && g_p_client_buffers[i].m_p_buffer && (g_p_client_buffers[i].m_buffersize == DATA_ARRAY_SIZE(client_count - 1)));
     }
 
@@ -232,7 +234,9 @@ int buffers_valid(int client_count)
 
     for (size_t i = 0; i < g_client_buff_size; i++)
     {
-        printf("Checking %d\n", g_p_client_buffers[i].m_fd);
+        #ifdef DEBUG_PRINTS
+            printf("Checking %d\n", g_p_client_buffers[i].m_fd);
+        #endif
         if (!buffers_equal(g_p_data_array, g_p_client_buffers[i].m_p_buffer, DATA_ARRAY_SIZE(client_count - 1), g_p_client_buffers[i].m_buffersize))
             return 0;
     }
@@ -269,7 +273,7 @@ error:
 
 int send_client(char* p_ip_addr, char* p_port, int client_count)
 {
-    printf("Starting Send Client...\n");
+    printf("RGCP TP SEND\n");
     int port = atoi(p_port);
     int fd = create_socket(p_ip_addr, port);
 
@@ -304,8 +308,14 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
         goto error;
     }
 
+    struct timespec total_time, measurement_start, measurement_end;
+    memset(&total_time, 0, sizeof(total_time));
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &measurement_start);
     if (rgcp_send(fd, g_p_data_array, DATA_ARRAY_SIZE(client_count - 1), 0, NULL) < 0)
         goto error;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &measurement_end);
+    total_time = get_delta(measurement_start, measurement_end);
 
     // now we can receive
     {
@@ -315,7 +325,9 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
 
         do
         {
+            clock_gettime(CLOCK_MONOTONIC_RAW, &measurement_start);
             recv_count = rgcp_recv(fd, &p_recv_datas);
+            clock_gettime(CLOCK_MONOTONIC_RAW, &measurement_end);
 
             if (recv_count < 0)
             {
@@ -328,20 +340,39 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
 
             for (ssize_t i = 0; i < recv_count; i++)
             {
-                printf("%d sent %ld bytes!\n", p_recv_datas[i].m_sourceFd, p_recv_datas[i].m_bufferSize);
+                #ifdef DEBUG_PRINTS
+                    printf("%d sent %ld bytes!\n", p_recv_datas[i].m_sourceFd, p_recv_datas[i].m_bufferSize);
+                #endif
                 load_into_client_array(p_recv_datas[i].m_sourceFd, p_recv_datas[i].m_pDataBuffer, p_recv_datas[i].m_bufferSize);
             }
 
             b_complete = client_array_complete(client_count);
-            printf("Client array complete? %s\n", b_complete ? "True" : "False");
+
+            #ifdef DEBUG_PRINTS
+                printf("Client array complete? %s\n", b_complete ? "True" : "False");
+            #endif
+            struct timespec intermediate_delta = get_delta(measurement_start, measurement_end);
+            total_time.tv_sec += intermediate_delta.tv_sec;
+            total_time.tv_nsec += intermediate_delta.tv_nsec;
+
+            while (total_time.tv_nsec > 1000000000)
+            {
+                total_time.tv_sec++;
+                total_time.tv_nsec -= 1000000000;
+            }
         } while (!b_complete);
     }
+    
+    #ifdef DEBUG_PRINTS
+        printf("Should have received all buffers!\n");
+    #endif
 
-    printf("Should have received all buffers!\n");
+    ssize_t seconds = total_time.tv_sec;
+    ssize_t ms = total_time.tv_nsec / 1000000;
 
     // check buffers here
     if (buffers_valid(client_count))
-        printf("Buffers Valid\n");
+        printf("Buffers Valid @ %lus:%lums\n", seconds, ms);
     else
         printf("Buffers Not Valid\n");
 
@@ -351,7 +382,9 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
     if (await_client_count(fd, 1, WAIT_TIMEOUT_SECONDS) == 0)
         goto error;
 
-    printf("Disconnecting...\n");
+    #ifdef DEBUG_PRINTS
+        printf("Disconnecting...\n");
+    #endif
 
     free(g_p_data_array);
     rgcp_disconnect(fd);
@@ -359,7 +392,9 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
     return 0;
 
 error:
-    printf("Error\n");
+    #ifdef DEBUG_PRINTS
+        printf("Error\n");
+    #endif
 
     if (g_p_data_array)
         free(g_p_data_array);
@@ -371,7 +406,7 @@ error:
 
 int recv_client(char* p_ip_addr, char* p_port, int client_count)
 {
-    printf("Starting Recv Client...\n");
+    printf("RGCP TP RECV\n");
     int port = atoi(p_port);
     int fd = create_socket(p_ip_addr, port);
     rgcp_unicast_mask_t send_mask;
@@ -389,7 +424,9 @@ int recv_client(char* p_ip_addr, char* p_port, int client_count)
     if (await_client_count(fd, client_count, WAIT_TIMEOUT_SECONDS) == 0)
         goto error;
 
-    printf("All clients active\n");
+    #ifdef DEBUG_PRINTS
+        printf("All clients active\n");
+    #endif
 
     {
         rgcp_recv_data_t* p_recv_datas = NULL;
@@ -417,7 +454,10 @@ int recv_client(char* p_ip_addr, char* p_port, int client_count)
         } while(recv_count >= 0 && !b_send_found);
     }
 
-    printf("Sender is: %d\n", g_send_fd);
+    #ifdef DEBUG_PRINTS
+        printf("Sender is: %d\n", g_send_fd);
+    #endif
+
     send_mask.m_targetFd = g_send_fd;
 
     {
@@ -440,7 +480,9 @@ int recv_client(char* p_ip_addr, char* p_port, int client_count)
                 if (p_recv_datas[i].m_sourceFd != g_send_fd)
                     continue;
                 
-                printf("%d sent %ld bytes!\n", p_recv_datas[i].m_sourceFd, p_recv_datas[i].m_bufferSize);
+                #ifdef DEBUG_PRINTS
+                    printf("%d sent %ld bytes!\n", p_recv_datas[i].m_sourceFd, p_recv_datas[i].m_bufferSize);
+                #endif
                 
                 if (!g_p_data_array)
                 {
@@ -458,12 +500,17 @@ int recv_client(char* p_ip_addr, char* p_port, int client_count)
         } while(recv_count >= 0 && data_array_size != DATA_ARRAY_SIZE(client_count - 1));
     }
 
-    printf("Received buffer @ %p (%u bytes)!\n", g_p_data_array, DATA_ARRAY_SIZE(client_count - 1));
+    #ifdef DEBUG_PRINTS
+        printf("Received buffer @ %p (%u bytes)!\n", g_p_data_array, DATA_ARRAY_SIZE(client_count - 1));
+    #endif
 
     if (rgcp_send(fd, g_p_data_array, DATA_ARRAY_SIZE(client_count - 1), RGCP_SEND_UNICAST, &send_mask) < 0)
         goto error;
 
-    printf("Sent buffer\n");
+    #ifdef DEBUG_PRINTS
+        printf("Sent buffer\n");
+    #endif
+
     g_b_recv_done = 1;
 
     {

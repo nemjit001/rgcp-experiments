@@ -1,6 +1,5 @@
 #! /bin/bash
 
-rm -r ../out/rgcp_stab_peers_*
 NumClients=5
 RunLocal=1
 Runtime=10
@@ -47,9 +46,9 @@ function DoLocalTest()
 
         if [ "$j" -lt "$NumClients" ]
         then
-            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i >> ../out/rgcp_stab_peers_$i/peer_$j &
+            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i > ../out/rgcp_stab_peers_$i\_$NumClients/peer_$j &
         else
-            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i >> ../out/rgcp_stab_peers_$i/peer_$j
+            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i > ../out/rgcp_stab_peers_$i\_$NumClients/peer_$j
         fi
 
         sleep .1
@@ -77,7 +76,7 @@ for i in `seq 1 $Cycles`
 do
     echo "Starting RGCP Stability Test" $i "(" $NumClients $RunLocal ")"
 
-    [ -d ../out/rgcp_stab_peers_$i ] || mkdir -p ../out/rgcp_stab_peers_$i
+    [ -d ../out/rgcp_stab_peers_$i\_$NumClients ] || mkdir -p ../out/rgcp_stab_peers_$i\_$NumClients
     
     if [ $RunLocal -eq 1 ]
     then
