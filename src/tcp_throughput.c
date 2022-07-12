@@ -103,7 +103,7 @@ int data_send(char* remote_ip)
 
     if (validate_buffers(data_array, response_buffer, DATA_ARRAY_SIZE, DATA_ARRAY_SIZE) == 0)
     {
-        printf("Buffers Invalid\n");
+        printf("Buffers Not Valid\n");
         goto error;
     }
 

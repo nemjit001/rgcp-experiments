@@ -31,5 +31,5 @@ do
 
     echo "Starting Send Peer"
     ../src/rgcp_throughput send ${ClientCount} > ../out/rgcp_tp_$i\_$ClientCount
-    sleep .1
+    sleep 1
 done
