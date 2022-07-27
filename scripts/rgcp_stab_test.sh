@@ -54,8 +54,8 @@ function DoLocalTest()
         sleep .1
     done
 
-    free -htwl -c $2 -s 1 >> ../out/rgcp_stab_ram_$client_count_$2&
-    mpstat -A -o JSON 1 $2 >> ../out/rgcp_stab_cpu_$client_count_$2&
+    free -htwl -c $2 -s 1 >> ../out/rgcp_stab_ram_$Cycles\_$client_count\_$2&
+    mpstat -A -o JSON 1 $2 >> ../out/rgcp_stab_cpu_$Cycles\_$client_count\_$2&
 }
 
 function DoDasTest()
