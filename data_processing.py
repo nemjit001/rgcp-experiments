@@ -133,6 +133,10 @@ def process_mem_load(path, output_file) -> bool:
     mem_load_files.sort()
 
     filename_regex = r'.*rgcp_stab_ram_(\d+)_(\d+)_(\d+)'
+    header_regex = r'^\s+total\s+used\s+free\s+shared\s+buffers\s+cache\s+available.*$'
+    totals_regex = r'^(Total):\s+(\d+|\d+,\d+)\s+(\d+|\d+,\d+)\s+(\d+|\d+,\d+)$'
+    swap_regex =  r'^(Swap):\s+(\d+|\d+,\d+)\s+(\d+|\d+,\d+)\s+(\d+|\d+,\d+)$'
+    mem_regex = r'^(Mem):\s+(\d+|\d+,\d+)\s+(\d+|\d+,\d+)\s+(\d+|\d+,\d+)\s+(\d+|\d+,\d+)\s+(\d+|\d+,\d+)\s+(\d+|\d+,\d+)\s+(\d+|\d+,\d+)$'
 
     for filename in mem_load_files:
         match = re.match(filename_regex, filename)
@@ -146,9 +150,27 @@ def process_mem_load(path, output_file) -> bool:
 
         with open(filename, "r") as file:
             lines = file.readlines()
+            seconds = 0
             
             for line in lines:
-                print(line, end='')
+                line = line.strip("\n\r")
+                header_match = re.match(header_regex, line)
+                totals_match = re.match(totals_regex, line)
+                swap_match = re.match(swap_regex, line)
+                mem_match = re.match(mem_regex, line)
+
+                if line == "":
+                    seconds += 1
+                elif header_match is not None:
+                    continue
+                elif totals_match is not None:
+                    print(totals_match.groups())
+                elif swap_match is not None:
+                    print(swap_match.groups())
+                elif mem_match is not None:
+                    print(mem_match.groups())
+                else:
+                    return False
 
     return True
 
