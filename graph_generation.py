@@ -1,9 +1,10 @@
+import os
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
 DATAPOINT_DIR = './datapoints/'
-OUTPUT_DIR = './media/'
+OUTPUT_DIR = './graphs/'
 
 def get_col_avg(df: pd.DataFrame, column_name: str):
     count = len(df[column_name].to_list())
@@ -73,21 +74,27 @@ def make_rgcp_avg_tp_graph(datapoint_dir: str):
 
     return tp_fig
 
-def make_tp_graphs(datapoint_dir: str) -> list:
-    return [
-        make_tcp_tp_graph(datapoint_dir),
-        make_rgcp_simple_tp_graph(datapoint_dir),
-        make_rgcp_avg_tp_graph(datapoint_dir)
-    ]
+def make_tp_graphs(datapoint_dir: str) -> dict:
+    return {
+        "tcp_tp": make_tcp_tp_graph(datapoint_dir),
+        "rgcp_simple": make_rgcp_simple_tp_graph(datapoint_dir),
+        "rgcp_avg": make_rgcp_avg_tp_graph(datapoint_dir)
+    }
 
-def make_stab_graphs(datapoint_dir: str) -> list:
-    return []
+def make_stab_graphs(datapoint_dir: str) -> dict:
+    return {}
 
-tp_graphs = make_tp_graphs(DATAPOINT_DIR)
-stab_graphs = make_stab_graphs(DATAPOINT_DIR)
+if __name__ == '__main__':
+    tp_graphs = make_tp_graphs(DATAPOINT_DIR)
+    stab_graphs = make_stab_graphs(DATAPOINT_DIR)
 
-for graph in tp_graphs:
-    print(f"<graph @ {id(graph)}>")
+    if not os.path.exists(OUTPUT_DIR):
+        os.mkdir(OUTPUT_DIR)
 
-for graph in stab_graphs:
-    print(f"<graph @ {id(graph)}>")
+    for graph_name in tp_graphs:
+        print(f"<graph @ {id(tp_graphs[graph_name])}>")
+        tp_graphs[graph_name].write_image(OUTPUT_DIR + graph_name + '.png')
+
+    for graph_name in stab_graphs:
+        print(f"<graph @ {id(graph_name)}>")
+        stab_graphs[graph_name].write_image(OUTPUT_DIR + graph_name + '.png')
