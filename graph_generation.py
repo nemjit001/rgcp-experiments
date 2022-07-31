@@ -92,9 +92,9 @@ def make_cpu_avg_util_graph(datapoint_dir: str):
 
     util_fig = px.line(
         util_df,
-        x='timestamp',
-        y='usr',
-        color='peer_count'
+        x='seconds_from_start',
+        y=['usr', 'sys'],
+        line_dash='peer_count'
     )
     
     return util_fig

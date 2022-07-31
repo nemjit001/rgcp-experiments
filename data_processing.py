@@ -17,6 +17,8 @@ def timestr_to_ms(string) -> int:
     return (sec * 1000) + msec
 
 def process_tcp_tp(path, output_file) -> bool:
+    print("TCP tp...")
+
     with open(path, "r") as tcp_tp_file:
         lines = tcp_tp_file.readlines()
         header_regex = r"^(\d+)\tTCP THROUGHPUT$"
@@ -33,6 +35,7 @@ def process_tcp_tp(path, output_file) -> bool:
             match_data = re.match(data_regex, lines[i + 1])
 
             if match_header is None or match_data is None:
+                print("Error: data format is wrong")
                 return False
 
             data_dict["test_num"].append(match_header.group(1))
@@ -47,6 +50,8 @@ def process_tcp_tp(path, output_file) -> bool:
     return True
 
 def process_rgcp_tp(path, output_file) -> bool:
+    print("RGCP tp...")
+
     rgcp_tp_files = glob.glob(path)
     rgcp_tp_files.sort()
 
@@ -64,6 +69,7 @@ def process_rgcp_tp(path, output_file) -> bool:
         match = re.match(filename_regex, filename)
 
         if match is None:
+            print("Error: no match found on filename")
             return False
 
         testNum = int(match.group(1))
@@ -79,6 +85,7 @@ def process_rgcp_tp(path, output_file) -> bool:
             data_match = re.match(data_regex, data_line)
             
             if data_match is None:
+                print("Error: data format is wrong")
                 return False
 
             data_dict["peer_count"].append(peerCount)
@@ -95,6 +102,8 @@ def process_rgcp_tp(path, output_file) -> bool:
     return True
 
 def process_cpu_load(path, output_file) -> bool:
+    print("CPU load...")
+
     cpu_load_files = glob.glob(path)
     cpu_load_files.sort()
 
@@ -104,13 +113,15 @@ def process_cpu_load(path, output_file) -> bool:
         "test_num": [],
         "peer_count": [],
         "runtime_seconds": [],
-        "timestamp": []
+        "timestamp": [],
+        "seconds_from_start": []
     }
 
     for filename in cpu_load_files:
         match = re.match(filename_regex, filename)
 
         if match is None:
+            print("Error: no match found on filename")
             return False
 
         testNum = int(match.group(1))
@@ -120,12 +131,13 @@ def process_cpu_load(path, output_file) -> bool:
         with open(filename, "r") as json_file:
             cpu_load = json.load(json_file)
             for host in cpu_load["sysstat"]["hosts"]:
-                for statistic in host["statistics"]:
+                for idx, statistic in enumerate(host["statistics"]):
                     for load in statistic['cpu-load']:
                         data_dict["test_num"].append(testNum)
                         data_dict["peer_count"].append(peerCount)
                         data_dict["runtime_seconds"].append(runtime)
-                        data_dict["timestamp"].append(statistic['timestamp'])
+                        data_dict["seconds_from_start"].append(idx)
+                        data_dict["timestamp"].append(statistic["timestamp"])
 
                         for key in load.keys():
                             try:
@@ -140,6 +152,8 @@ def process_cpu_load(path, output_file) -> bool:
     return True
 
 def process_mem_load(path, output_file) -> bool:
+    print("Mem load...")
+
     mem_load_files = glob.glob(path)
     mem_load_files.sort()
 
@@ -161,6 +175,7 @@ def process_mem_load(path, output_file) -> bool:
         match = re.match(filename_regex, filename)
 
         if match is None:
+            print("Error: no match found on filename")
             return False
 
         testNum = int(match.group(1))
@@ -216,6 +231,7 @@ def process_mem_load(path, output_file) -> bool:
                     data_dict["cache"].append(int(mem_match.group(7)))
                     data_dict["available"].append(int(mem_match.group(8)))
                 else:
+                    print("Error: output file format is wrong")
                     return False
                 
                 data_dict["test_num"].append(testNum)
