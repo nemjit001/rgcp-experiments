@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 
 DATAPOINT_DIR = './datapoints/'
 OUTPUT_DIR = './graphs/'
@@ -86,7 +85,7 @@ def make_tp_graphs(datapoint_dir: str) -> dict:
         "rgcp_avg": make_rgcp_avg_tp_graph(datapoint_dir)
     }
 
-def make_cpu_avg_util_graph(datapoint_dir: str):
+def make_cpu_util_graph(datapoint_dir: str):
     util_df = pd.read_csv(datapoint_dir + 'stab_cpu_load.csv')
     util_df = util_df[util_df['cpu'] == "all"]
 
@@ -99,10 +98,23 @@ def make_cpu_avg_util_graph(datapoint_dir: str):
     
     return util_fig
 
+def make_mem_util_graph(datapoint_dir: str):
+    util_df = pd.read_csv(datapoint_dir + 'stab_mem_load.csv')
+    util_df = util_df[util_df['source'] == "Total"]
+
+    util_fig = px.line(
+        util_df,
+        x='timestamp',
+        y='used',
+        line_dash='peer_count'
+    )
+    
+    return util_fig
+
 def make_stab_graphs(datapoint_dir: str) -> dict:
     return {
-        "cpu_avg_util_over_peers": make_cpu_avg_util_graph(datapoint_dir),
-        "mem_avg_util_over_peers": None
+        "cpu_util_per_second_over_peers": make_cpu_util_graph(datapoint_dir),
+        "mem_util_per_second_over_peers": make_mem_util_graph(datapoint_dir)
     }
 
 if __name__ == '__main__':
