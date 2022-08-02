@@ -46,9 +46,9 @@ function DoLocalTest()
 
         if [ "$j" -lt "$NumClients" ]
         then
-            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i > ../out/rgcp_stab_peers_$i\_$NumClients/peer_$j &
+            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i "127.0.0.1" "8000" > ../out/rgcp_stab_peers_$i\_$NumClients/peer_$j &
         else
-            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i > ../out/rgcp_stab_peers_$i\_$NumClients/peer_$j
+            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i "127.0.0.1" "8000" > ../out/rgcp_stab_peers_$i\_$NumClients/peer_$j
         fi
 
         sleep .1
@@ -69,9 +69,7 @@ function DoDasTest()
 
     for j in `seq 1 $client_count`
     do
-        echo "Starting Das5 Client" $j "out of" $client_count
-        srun ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i >> ../out/rgcp_stab_peers_$i/peer_$j
-        sleep .1
+        # do stuff
     done
 }
 

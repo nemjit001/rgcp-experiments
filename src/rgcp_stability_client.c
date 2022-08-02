@@ -9,6 +9,9 @@ static int duration_seconds = 0;
 static int rand_seed = 0;
 static int disconnect_chance = 10;
 static char* p_group_name = "STAB_GROUP_NONUM";
+static char* p_ip_addr = "127.0.0.1";
+static char* p_port = "8000";
+
 static int b_is_connected = 0;
 
 struct timespec get_delta(struct timespec A, struct timespec B)
@@ -26,12 +29,14 @@ struct timespec get_delta(struct timespec A, struct timespec B)
     return res;
 }
 
-int create_socket(char* ip)
+int create_socket(char* ip, char* p_port)
 {
+    uint16_t port = atoi(p_port);
+
     struct sockaddr_in mw_addr;
     mw_addr.sin_addr.s_addr = inet_addr(ip);
     mw_addr.sin_family = AF_INET;
-    mw_addr.sin_port = htons(8000);
+    mw_addr.sin_port = htons(port);
     return rgcp_socket(AF_INET, (struct sockaddr*)&mw_addr, sizeof(mw_addr));
 }
 
@@ -87,13 +92,19 @@ int main(int argc, char** argv)
     if (argc >= 5)
         p_group_name = argv[4];
 
+    if (argc >= 6)
+        p_ip_addr = argv[5];
+    
+    if (argc >= 7)
+        p_port = argv[6];
+
     if (rand_seed == 0)
         srand((unsigned)time(NULL));
     else
         srand(rand_seed);
     
 
-    int fd = create_socket("127.0.0.1");
+    int fd = create_socket(p_ip_addr, p_port);
 
     rgcp_group_info_t* p_group_info = get_or_create_group(fd, p_group_name);
 

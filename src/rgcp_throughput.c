@@ -544,26 +544,32 @@ error:
 
 int main(int argc, char** argv)
 {
-    if (argc < 2)
-        return -1;        
-
-    if (strcmp(argv[1], "setup") == 0)
-        return setup_seq("127.0.0.1", "8000");
-    
     if (argc < 3)
         return -1;
 
     int client_count = atoi(argv[2]);
+
+    char* ip_addr = "127.0.0.1";
+    char* port = "8000";
     int res = -1;
+
+    if (argc >= 4)
+        ip_addr = argv[3];
+
+    if (argc >= 5)
+        port = argv[4];
+
+    if (strcmp(argv[1], "setup") == 0)
+        return setup_seq(ip_addr, port);
 
     g_p_client_buffers = calloc(client_count - 1, sizeof(struct client_buff_data));
     g_client_buff_size = client_count - 1;
 
     if (strcmp(argv[1], "send") == 0)
-        res = send_client("127.0.0.1", "8000", client_count);
+        res = send_client(ip_addr, port, client_count);
 
     if (strcmp(argv[1], "recv") == 0)
-        res = recv_client("127.0.0.1", "8000", client_count);
+        res = recv_client(ip_addr, port, client_count);
 
     free(g_p_client_buffers);
     return res;
