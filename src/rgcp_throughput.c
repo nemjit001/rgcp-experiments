@@ -308,14 +308,11 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
         goto error;
     }
 
-    struct timespec total_time, measurement_start, measurement_end;
-    memset(&total_time, 0, sizeof(total_time));
+    struct timespec start_time, end_time;
 
-    clock_gettime(CLOCK_MONOTONIC_RAW, &measurement_start);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start_time);
     if (rgcp_send(fd, g_p_data_array, DATA_ARRAY_SIZE(client_count - 1), 0, NULL) < 0)
         goto error;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &measurement_end);
-    total_time = get_delta(measurement_start, measurement_end);
 
     // now we can receive
     {
@@ -325,9 +322,7 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
 
         do
         {
-            clock_gettime(CLOCK_MONOTONIC_RAW, &measurement_start);
             recv_count = rgcp_recv(fd, &p_recv_datas);
-            clock_gettime(CLOCK_MONOTONIC_RAW, &measurement_end);
 
             if (recv_count < 0)
             {
@@ -345,28 +340,21 @@ int send_client(char* p_ip_addr, char* p_port, int client_count)
                 #endif
                 load_into_client_array(p_recv_datas[i].m_sourceFd, p_recv_datas[i].m_pDataBuffer, p_recv_datas[i].m_bufferSize);
             }
-
+        
+            b_complete = client_array_complete(client_count);
             #ifdef DEBUG_PRINTS
                 printf("Client array complete? %s\n", b_complete ? "True" : "False");
             #endif
-            struct timespec intermediate_delta = get_delta(measurement_start, measurement_end);
-            total_time.tv_sec += intermediate_delta.tv_sec;
-            total_time.tv_nsec += intermediate_delta.tv_nsec;
-
-            while (total_time.tv_nsec > 1000000000)
-            {
-                total_time.tv_sec++;
-                total_time.tv_nsec -= 1000000000;
-            }
-        
-            b_complete = client_array_complete(client_count);
         } while (!b_complete);
     }
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end_time);
 
     #ifdef DEBUG_PRINTS
         printf("Should have received all buffers!\n");
     #endif
-
+    
+    struct timespec total_time = get_delta(start_time, end_time);
     ssize_t seconds = total_time.tv_sec;
     ssize_t ms = total_time.tv_nsec / 1000000;
 
