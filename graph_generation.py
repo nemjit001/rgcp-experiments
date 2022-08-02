@@ -85,15 +85,15 @@ def make_tp_graphs(datapoint_dir: str) -> dict:
         "rgcp_avg": make_rgcp_avg_tp_graph(datapoint_dir)
     }
 
-def make_cpu_util_graph(datapoint_dir: str):
+def make_cpu_util_graph(datapoint_dir: str, col_name: str):
     util_df = pd.read_csv(datapoint_dir + 'stab_cpu_load.csv')
     util_df = util_df[util_df['cpu'] == "all"]
 
     util_fig = px.line(
         util_df,
         x='seconds_from_start',
-        y=['usr', 'sys'],
-        line_dash='peer_count'
+        y=col_name,
+        color='peer_count'
     )
     
     return util_fig
@@ -106,14 +106,15 @@ def make_mem_util_graph(datapoint_dir: str):
         util_df,
         x='timestamp',
         y='used',
-        line_dash='peer_count'
+        color='peer_count'
     )
     
     return util_fig
 
 def make_stab_graphs(datapoint_dir: str) -> dict:
     return {
-        "cpu_util_per_second_over_peers": make_cpu_util_graph(datapoint_dir),
+        "usr_cpu_util_per_second_over_peers": make_cpu_util_graph(datapoint_dir, 'usr'),
+        "sys_cpu_util_per_second_over_peers": make_cpu_util_graph(datapoint_dir, 'sys'),
         "mem_util_per_second_over_peers": make_mem_util_graph(datapoint_dir)
     }
 
