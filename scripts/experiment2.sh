@@ -1,13 +1,11 @@
 #! /bin/bash
 
-RunLocal=1
-
-if [ ! -z $1 ]
-then
-    RunLocal=$(($1))
-fi
+echo "Starting Experiment 2"
 
 for i in `seq 5 5 30`
 do
-    ./rgcp_stab_test.sh $i $RunLocal 60 1000 3
+    ./rgcp_stab_test.sh $i 60 3 1000 "" 1
+    sleep 1
 done
+
+echo "Experiment 2 Done"

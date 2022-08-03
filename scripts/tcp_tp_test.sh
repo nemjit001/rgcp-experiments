@@ -4,6 +4,20 @@ rm ../out/tcp_tp
 
 RunLocal=1
 
+function PrintHelp()
+{
+    echo "./tcp_tp_test.sh <Run Locally>"
+    exit 1
+}
+
+for param in "$@"
+do
+    if [[ $param == "help" ]]
+    then 
+        PrintHelp
+    fi
+done
+
 if [ ! -z $1 ]
 then
     RunLocal=$(($1))
@@ -13,7 +27,7 @@ for i in {1..30}
 do
     echo "Starting TCP Test" $i
 
-    [ -d ../out ] || mkdir -p ../out
+    [ -d ../out/ ] || mkdir -p ../out/
 
     if [ $RunLocal -eq 1 ]
     then

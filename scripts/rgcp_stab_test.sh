@@ -1,10 +1,26 @@
 #! /bin/bash
 
 NumClients=5
-RunLocal=1
 Runtime=10
-ConnectProb=1000
 Cycles=1
+ConnectProb=1000
+OutputPrefix=""
+
+RunLocal=1
+
+function PrintHelp()
+{
+    echo "./rgcp_stab_test.sh <Number of Clients> <Time in Seconds> <Repeats> <Connection Probability> <Outputfile Prefix> <Run Locally>"
+    exit 1
+}
+
+for param in "$@"
+do
+    if [[ $param == "help" ]]
+    then 
+        PrintHelp
+    fi
+done
 
 if [ ! -z $1 ]
 then
@@ -13,12 +29,12 @@ fi
 
 if [ ! -z $2 ]
 then
-    RunLocal=$(($2))
+    Runtime=$(($2))
 fi
 
 if [ ! -z $3 ]
 then
-    Runtime=$(($3))
+    Cycles=$(($3))
 fi
 
 if [ ! -z $4 ]
@@ -28,12 +44,17 @@ fi
 
 if [ ! -z $5 ]
 then
-    Cycles=$(($5))
+    OutputPrefix=$5
+fi
+
+if [ ! -z $6 ]
+then
+    RunLocal=$(($6))
 fi
 
 function DoLocalTest()
 {
-    if [ $# -ne 3 ]
+    if [ $# -ne 4 ]
     then
         exit 1
     fi
@@ -46,43 +67,40 @@ function DoLocalTest()
 
         if [ "$j" -lt "$NumClients" ]
         then
-            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i "127.0.0.1" "8000" > ../out/rgcp_stab_peers_$i\_$NumClients/peer_$j &
+            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i "127.0.0.1" "8000" >> /dev/null &
         else
-            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i "127.0.0.1" "8000" > ../out/rgcp_stab_peers_$i\_$NumClients/peer_$j
+            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i "127.0.0.1" "8000" >> /dev/null
         fi
 
         sleep .1
     done
 
-    free -twm -c $2 -s 1 > ../out/rgcp_stab_ram_$Cycles\_$client_count\_$2&
-    mpstat -A -o JSON 1 $2 > ../out/rgcp_stab_cpu_$Cycles\_$client_count\_$2&
+    free -twm -c $2 -s 1 > ../out/${OutputPrefix}rgcp_stab_ram_$4\_$client_count\_$2 &
+    mpstat -A -o JSON 1 $2 > ../out/${OutputPrefix}rgcp_stab_cpu_$4\_$client_count\_$2 &
 }
 
 function DoDasTest()
 {
-    if [ $# -ne 3 ]
+    if [ $# -ne 4 ]
     then
         exit 1
     fi
 
     local client_count=$1
 
-    for j in `seq 1 $client_count`
-    do
-        # do stuff
-    done
+    
 }
 
 for i in `seq 1 $Cycles`
 do
-    echo "Starting RGCP Stability Test" $i "(" $NumClients $RunLocal ")"
+    echo "Starting RGCP Stability Test" $i
 
-    [ -d ../out/rgcp_stab_peers_$i\_$NumClients ] || mkdir -p ../out/rgcp_stab_peers_$i\_$NumClients
+    [ -d ../out/ ] || mkdir -p ../out/
     
     if [ $RunLocal -eq 1 ]
     then
-        DoLocalTest $NumClients $Runtime $ConnectProb
+        DoLocalTest $NumClients $Runtime $ConnectProb $i
     else
-        DoDasTest $NumClients $Runtime $ConnectProb
+        DoDasTest $NumClients $Runtime $ConnectProb $i
     fi
 done
