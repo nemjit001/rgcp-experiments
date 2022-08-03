@@ -28,6 +28,7 @@ do
     echo "Starting TCP Test" $i
 
     [ -d ../out/ ] || mkdir -p ../out/
+    [ -d ./tmp/ ] || mkdir -p ./tmp/
 
     if [ $RunLocal -eq 1 ]
     then
@@ -35,7 +36,7 @@ do
         sleep .1
         ../src/tcp_throughput send 127.0.0.1 $i >> ../out/tcp_tp
     else
-        srun ../src/tcp_throughput recv >> /dev/null  &
-        srun ../src/tcp_throughput send 127.0.0.1 $i >> ../out/tcp_tp &
+        srun -o ./tmp/tcp_host_ip ./das/tcp_tp_recv.sh
+        srun ../src/tcp_throughput send $(cat ./tmp/tcp_host_ip) >> ../out/tcp_tp
     fi
 done

@@ -35,6 +35,11 @@ then
     OutputPrefix=$3
 fi
 
+if [ ! -z $4 ]
+then
+    RunLocal=$(($4))
+fi
+
 for i in `seq 1 $Iterations`
 do
     echo "Starting RGCP Throughput Test" $i

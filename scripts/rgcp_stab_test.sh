@@ -67,9 +67,9 @@ function DoLocalTest()
 
         if [ "$j" -lt "$NumClients" ]
         then
-            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i "127.0.0.1" "8000" >> /dev/null &
+            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$4 "127.0.0.1" "8000" >> /dev/null &
         else
-            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$i "127.0.0.1" "8000" >> /dev/null
+            ../src/rgcp_stability_client $2 $3 $j STAB_TEST_$4 "127.0.0.1" "8000" >> /dev/null
         fi
 
         sleep .1
@@ -86,9 +86,7 @@ function DoDasTest()
         exit 1
     fi
 
-    local client_count=$1
-
-    
+    srun ./das/rgcp_stab.sh $2 $3 $1 $4 >> /dev/null
 }
 
 for i in `seq 1 $Cycles`
