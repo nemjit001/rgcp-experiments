@@ -40,23 +40,58 @@ then
     RunLocal=$(($4))
 fi
 
+function DoLocalTest()
+{
+    local client_count=$1
+    local output_prefix=$2
+    local test_num=$3
+
+    ../src/rgcp_throughput setup ${client_count} "127.0.0.1" "8000"
+
+    seq_count=`expr $client_count - 1`
+    for j in `seq 1 ${seq_count}`
+    do
+        echo "Starting Recv Peer" $j
+        ../src/rgcp_throughput recv ${client_count} "127.0.0.1" "8000" >> /dev/null &
+        sleep .1
+    done
+
+    echo "Starting Send Peer"
+    ../src/rgcp_throughput send ${client_count} "127.0.0.1" "8000" > ../out/${output_prefix}rgcp_tp_$test_num\_$client_count
+    sleep 1
+}
+
+function DoDasTest()
+{
+    local client_count=$1
+    local output_prefix=$2
+    local test_num=$3
+
+    srun ../src/rgcp_throughput setup ${client_count} $(cat ./tmp/rgcp_mw_ip) "8000"
+
+    seq_count=`expr $client_count - 1`
+    for j in `seq 1 ${seq_count}`
+    do
+        echo "Starting Recv Peer" $j
+        srun ../src/rgcp_throughput recv ${client_count} $(cat ./tmp/rgcp_mw_ip) "8000" >> /dev/null &
+        sleep .1
+    done
+
+    echo "Starting Send Peer"
+    srun -o ../out/${output_prefix}rgcp_tp_$test_num\_$client_count ../src/rgcp_throughput send ${client_count} $(cat ./tmp/rgcp_mw_ip) "8000"
+    sleep 1
+}
+
 for i in `seq 1 $Iterations`
 do
     echo "Starting RGCP Throughput Test" $i
 
     [ -d ../out/ ] || mkdir -p ../out/
 
-    ../src/rgcp_throughput setup ${ClientCount} "127.0.0.1" "8000"
-
-    SeqCount=`expr $ClientCount - 1`
-    for j in `seq 1 ${SeqCount}`
-    do
-        echo "Starting Recv Peer" $j
-        ../src/rgcp_throughput recv ${ClientCount} "127.0.0.1" "8000" >> /dev/null &
-        sleep .1
-    done
-
-    echo "Starting Send Peer"
-    ../src/rgcp_throughput send ${ClientCount} "127.0.0.1" "8000" > ../out/${OutputPrefix}rgcp_tp_$i\_$ClientCount
-    sleep 1
+    if [ $RunLocal -eq 1 ]
+    then
+        DoLocalTest $ClientCount $OutputPrefix $i
+    else
+        DoDasTest $ClientCount $OutputPrefix $i 
+    fi
 done
