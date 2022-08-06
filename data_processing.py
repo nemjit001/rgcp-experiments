@@ -114,7 +114,18 @@ def process_cpu_load(path, output_file) -> bool:
         "peer_count": [],
         "runtime_seconds": [],
         "timestamp": [],
-        "seconds_from_start": []
+        "seconds_from_start": [],
+        "cpu": [],
+        "usr": [],
+        "nice": [],
+        "sys": [],
+        "iowait": [],
+        "irq": [],
+        "soft": [],
+        "steal": [],
+        "guest": [],
+        "gnice": [],
+        "idle": []
     }
 
     for filename in cpu_load_files:
@@ -128,22 +139,36 @@ def process_cpu_load(path, output_file) -> bool:
         peerCount = int(match.group(2))
         runtime = int(match.group(3))
 
-        with open(filename, "r") as json_file:
-            cpu_load = json.load(json_file)
-            for host in cpu_load["sysstat"]["hosts"]:
-                for idx, statistic in enumerate(host["statistics"]):
-                    for load in statistic['cpu-load']:
-                        data_dict["test_num"].append(testNum)
-                        data_dict["peer_count"].append(peerCount)
-                        data_dict["runtime_seconds"].append(runtime)
-                        data_dict["seconds_from_start"].append(idx)
-                        data_dict["timestamp"].append(statistic["timestamp"])
+        with open(filename, "r") as file:
+            lines = file.readlines()
 
-                        for key in load.keys():
-                            try:
-                                data_dict[key].append(load[key])
-                            except KeyError:
-                                data_dict.setdefault(key, [load[key]])
+            seconds = 0
+            for line in lines:
+                line = line.strip()
+                if re.search("all", line) is not None:
+                    data = line.split()
+                    if data[0] == 'Average:':
+                        continue
+
+                    data_dict["test_num"].append(testNum)
+                    data_dict["peer_count"].append(peerCount)
+                    data_dict["runtime_seconds"].append(runtime)
+                    data_dict["timestamp"].append(f'{data[0]} {data[1]}')
+                    data_dict["seconds_from_start"].append(seconds)
+                    data_dict["cpu"].append(data[2])
+                    data_dict["usr"].append(float(data[3]))
+                    data_dict["nice"].append(float(data[4]))
+                    data_dict["sys"].append(float(data[5]))
+                    data_dict["iowait"].append(float(data[6]))
+                    data_dict["irq"].append(float(data[7]))
+                    data_dict["soft"].append(float(data[8]))
+                    data_dict["steal"].append(float(data[9]))
+                    data_dict["guest"].append(float(data[10]))
+                    data_dict["gnice"].append(float(data[11]))
+                    data_dict["idle"].append(float(data[12]))
+
+                    seconds += 1
+
 
     df = pd.DataFrame(data_dict)
     df.sort_values(["test_num", "peer_count", "runtime_seconds"], inplace=True)
@@ -274,7 +299,11 @@ def do_stability_experiments() -> None:
 def do_simul_test_experiments() -> None:
     print("Processing `throughput during stability` experiment:")
     
-    print("\tNYI")
+    if not process_rgcp_tp(OUT_DIR + "exp4_*", DATAPOINT_DIR + 'rgcp_tp_during_stab.csv'):
+        print("\tTP During Stab processing failed")
+        return
+
+    print("\tOK")
 
 if __name__ == "__main__":
     if not os.path.exists(DATAPOINT_DIR):
