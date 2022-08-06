@@ -43,29 +43,29 @@ fi
 function DoLocalTest()
 {
     local client_count=$1
-    local output_prefix=$2
-    local test_num=$3
+    local output_prefix=$3
+    local test_num=$2
 
-    ../src/rgcp_throughput setup ${client_count} "127.0.0.1" "8000"
+    ../src/rgcp_throughput setup ${client_count} $(cat ./tmp/rgcp_mw_ip) "8000"
 
     seq_count=`expr $client_count - 1`
     for j in `seq 1 ${seq_count}`
     do
         echo "Starting Recv Peer" $j
-        ../src/rgcp_throughput recv ${client_count} "127.0.0.1" "8000" >> /dev/null &
+        ../src/rgcp_throughput recv ${client_count} $(cat ./tmp/rgcp_mw_ip) "8000" >> /dev/null &
         sleep .1
     done
 
     echo "Starting Send Peer"
-    ../src/rgcp_throughput send ${client_count} "127.0.0.1" "8000" > ../out/${output_prefix}rgcp_tp_$test_num\_$client_count
+    ../src/rgcp_throughput send ${client_count} $(cat ./tmp/rgcp_mw_ip) "8000" > ../out/${output_prefix}rgcp_tp_$test_num\_$client_count
     sleep 1
 }
 
 function DoDasTest()
 {
     local client_count=$1
-    local output_prefix=$2
-    local test_num=$3
+    local output_prefix=$3
+    local test_num=$2
 
     srun ../src/rgcp_throughput setup ${client_count} $(cat ./tmp/rgcp_mw_ip) "8000"
 
@@ -90,8 +90,8 @@ do
 
     if [ $RunLocal -eq 1 ]
     then
-        DoLocalTest $ClientCount $OutputPrefix $i
+        DoLocalTest $ClientCount $i $OutputPrefix
     else
-        DoDasTest $ClientCount $OutputPrefix $i 
+        DoDasTest $ClientCount $i $OutputPrefix  
     fi
 done

@@ -36,7 +36,8 @@ do
         sleep .1
         ../src/tcp_throughput send 127.0.0.1 $i >> ../out/tcp_tp
     else
-        srun -o ./tmp/tcp_host_ip ./das/tcp_tp_recv.sh
+        srun ./das/tcp_tp_recv.sh >> /dev/null &
+        sleep .1
         srun ../src/tcp_throughput send $(cat ./tmp/tcp_host_ip) >> ../out/tcp_tp
     fi
 done

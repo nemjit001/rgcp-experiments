@@ -76,7 +76,7 @@ function DoLocalTest()
     done
 
     free -twm -c $2 -s 1 > ../out/${OutputPrefix}rgcp_stab_ram_$4\_$client_count\_$2 &
-    mpstat -A -o JSON 1 $2 > ../out/${OutputPrefix}rgcp_stab_cpu_$4\_$client_count\_$2 &
+    mpstat -P ALL 1 $2 > ../out/${OutputPrefix}rgcp_stab_cpu_$4\_$client_count\_$2 &
 }
 
 function DoDasTest()

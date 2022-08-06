@@ -21,4 +21,4 @@ do
 done
 
 free -twm -c $run_time -s 1 > ../out/${OutputPrefix}rgcp_stab_ram_$test_num\_$client_count\_$run_time &
-mpstat -A -o JSON 1 $run_time > ../out/${OutputPrefix}rgcp_stab_cpu_$test_num\_$client_count\_$run_time
+mpstat -P ALL 1 $run_time > ../out/${OutputPrefix}rgcp_stab_cpu_$test_num\_$client_count\_$run_time
