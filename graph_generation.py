@@ -89,8 +89,29 @@ def make_cpu_util_graph(datapoint_dir: str, col_name: str):
     util_df = pd.read_csv(datapoint_dir + 'stab_cpu_load.csv')
     util_df = util_df[util_df['cpu'] == "all"]
 
+    dfs = [ util_df[util_df['peer_count'] == count] for count in util_df['peer_count'].unique() ]
+    out_df = None
+
+    for df in dfs:
+        _dfs = [ df[df['test_num'] == num] for num in util_df['test_num'].unique() ]
+
+        total_df = _dfs[0][['test_num', 'peer_count', 'seconds_from_start', col_name]].copy(deep=True)
+        total_df.reset_index(inplace=True)
+
+        for i in range(1, len(_dfs)):
+            _df = _dfs[i].copy(deep=True)
+            _df.reset_index(inplace=True)
+            total_df[col_name] = total_df[col_name] + _df[col_name]
+
+        total_df[col_name] = total_df[col_name] / len(_dfs)
+
+        if out_df is None:
+            out_df = total_df
+        else:
+            out_df = pd.concat([out_df, total_df])
+
     util_fig = px.line(
-        util_df,
+        out_df,
         x='seconds_from_start',
         y=col_name,
         color='peer_count'
@@ -102,8 +123,29 @@ def make_mem_util_graph(datapoint_dir: str):
     util_df = pd.read_csv(datapoint_dir + 'stab_mem_load.csv')
     util_df = util_df[util_df['source'] == "Total"]
 
+    dfs = [ util_df[util_df['peer_count'] == count] for count in util_df['peer_count'].unique() ]
+    out_df = None
+
+    for df in dfs:
+        _dfs = [ df[df['test_num'] == num] for num in util_df['test_num'].unique() ]
+
+        total_df = _dfs[0][['test_num', 'peer_count', 'timestamp', 'used']].copy(deep=True)
+        total_df.reset_index(inplace=True)
+
+        for i in range(1, len(_dfs)):
+            _df = _dfs[i].copy(deep=True)
+            _df.reset_index(inplace=True)
+            total_df['used'] = total_df['used'] + _df['used']
+
+        total_df['used'] = total_df['used'] / len(_dfs)
+
+        if out_df is None:
+            out_df = total_df
+        else:
+            out_df = pd.concat([out_df, total_df])
+
     util_fig = px.line(
-        util_df,
+        out_df,
         x='timestamp',
         y='used',
         color='peer_count'
