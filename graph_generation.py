@@ -78,11 +78,60 @@ def make_rgcp_avg_tp_graph(datapoint_dir: str):
 
     return tp_fig
 
+def make_rgcp_stab_avg_tp_graph(datapoint_dir: str):
+    rgcp_tp_df = pd.read_csv(datapoint_dir + 'rgcp_tp_during_stab.csv')
+    baseline_df = pd.read_csv(datapoint_dir + 'rgcp_tp.csv')
+
+    baseline_tp_df_list = { count: baseline_df[baseline_df['peer_count'] == count] for count in baseline_df['peer_count'].unique() }
+    rgcp_tp_df_list = { count: rgcp_tp_df[rgcp_tp_df['peer_count'] == count] for count in rgcp_tp_df['peer_count'].unique() }
+
+    avg_rtt = {
+        "test": [ 'No Stability', 'During Stability' ],
+        "peer_count": [ 0, 0 ],
+        "avg_time_ms": [ 0, 0 ]
+    }
+
+    for key in baseline_tp_df_list:
+        if key == 2:
+            continue
+        
+        avg_rtt['test'].append('No Stability')
+        avg_rtt['peer_count'].append(key)
+        avg_rtt['avg_time_ms'].append(get_col_avg(baseline_tp_df_list[key], 'time_ms'))
+
+    for key in rgcp_tp_df_list:
+        if key == 2:
+            continue
+
+        avg_rtt['test'].append('During Stability')
+        avg_rtt['peer_count'].append(key)
+        avg_rtt['avg_time_ms'].append(get_col_avg(rgcp_tp_df_list[key], 'time_ms'))
+
+    df = pd.DataFrame(avg_rtt)
+
+    tp_fig = px.line(
+        df, 
+        x='peer_count', 
+        y='avg_time_ms', 
+        color='test',
+        line_dash='test', 
+        line_dash_map={
+            'No Stability': 'dot',
+            'During Stability': 'solid'
+        }
+    )
+
+    tp_fig.update_xaxes(type='category', rangemode='tozero')
+    tp_fig.update_yaxes(rangemode='tozero')
+
+    return tp_fig
+
 def make_tp_graphs(datapoint_dir: str) -> dict:
     return {
         "tcp_tp": make_tcp_tp_graph(datapoint_dir),
         "rgcp_simple": make_rgcp_simple_tp_graph(datapoint_dir),
-        "rgcp_avg": make_rgcp_avg_tp_graph(datapoint_dir)
+        "rgcp_avg": make_rgcp_avg_tp_graph(datapoint_dir),
+        "rgcp_avg_during_stab": make_rgcp_stab_avg_tp_graph(datapoint_dir)
     }
 
 def make_cpu_util_graph(datapoint_dir: str, col_name: str):
