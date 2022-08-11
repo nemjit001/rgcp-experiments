@@ -1,3 +1,4 @@
+from codecs import ignore_errors
 import os, re, glob, json
 import pandas as pd
 
@@ -270,6 +271,50 @@ def process_mem_load(path, output_file) -> bool:
 
     return True
 
+def process_failure_rate(path: str, output_file: str):
+    client_files = glob.glob(path)
+    client_files.sort()
+
+    data_dict = {
+        "test_num": [],
+        "client_count": [],
+        "runtime_seconds": [],
+        "client_num": [],
+        "exit_type": []
+    }
+
+    filename_regex = r'.*stab_client_(\d+)_(\d+)_(\d+)\/client_(\d+)'
+
+    for filename in client_files:
+        match = re.match(filename_regex, filename)
+
+        if match is None:
+            return False
+
+        runtime = int(match.group(1))
+        client_count = int(match.group(2))
+        test_num = int(match.group(3))
+        client_num = int(match.group(4))
+
+        with open(filename, "r") as file:
+            lines = file.readlines()
+
+            status = "UNKNOWN"
+            if (len(lines) != 0):
+                status = lines[0].strip()
+
+            data_dict["test_num"].append(test_num)
+            data_dict["client_count"].append(client_count)
+            data_dict["runtime_seconds"].append(runtime)
+            data_dict["client_num"].append(client_num)
+            data_dict["exit_type"].append(status)
+
+    df = pd.DataFrame(data_dict)
+    df.sort_values(['test_num', 'client_count', 'client_num'], inplace=True)
+    df.to_csv(output_file, index=False)
+
+    return True
+
 def do_throughput_experiments() -> None:
     print("Processing `throughput` experiment:")
 
@@ -292,6 +337,10 @@ def do_stability_experiments() -> None:
 
     if not process_mem_load(OUT_DIR + "rgcp_stab_ram_*", DATAPOINT_DIR + 'stab_mem_load.csv'):
         print("Memory load data processing failed")
+        return
+
+    if not process_failure_rate(OUT_DIR + "stab_client_*/*", DATAPOINT_DIR + 'failure_rate.csv'):
+        print("Failure Rate processing failed")
         return
     
     print("\tOK")

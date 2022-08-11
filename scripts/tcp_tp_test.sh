@@ -23,7 +23,7 @@ then
     RunLocal=$(($1))
 fi
 
-for i in {1..30}
+for i in {1..500}
 do
     echo "Starting TCP Test" $i
 

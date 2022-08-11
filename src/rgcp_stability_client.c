@@ -106,12 +106,20 @@ int main(int argc, char** argv)
 
     int fd = create_socket(p_ip_addr, p_port);
 
+    if (fd < 0)
+    {
+        printf("FAIL\n");
+        rgcp_close(fd);
+        return 0;
+    }
+
     rgcp_group_info_t* p_group_info = get_or_create_group(fd, p_group_name);
 
     if (!p_group_info)
     {
+        printf("FAIL\n");
         rgcp_close(fd);
-        return -1;
+        return 0;
     }
 
     struct timespec start_time, curr_lap, total_time;
@@ -126,12 +134,20 @@ int main(int argc, char** argv)
             if (b_is_connected)
             {
                 if (rgcp_disconnect(fd) < 0)
-                    break;
+                {
+                    printf("FAIL\n");
+                    rgcp_close(fd);
+                    return 0;
+                }
             }
             else
             {
                 if (rgcp_connect(fd, *p_group_info) < 0)
-                    break;
+                {
+                    printf("FAIL\n");
+                    rgcp_close(fd);
+                    return 0;
+                }
             }
 
             b_is_connected = !b_is_connected;
@@ -140,6 +156,8 @@ int main(int argc, char** argv)
         clock_gettime(CLOCK_MONOTONIC_RAW, &curr_lap);
         total_time = get_delta(start_time, curr_lap);
     } while (total_time.tv_sec < duration_seconds);   
+
+    printf("OK\n");
 
     printf("Stability test done in %lds:%ldms\n", total_time.tv_sec, total_time.tv_nsec / 100000);
 

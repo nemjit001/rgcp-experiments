@@ -12,11 +12,13 @@ test_num=$(($4))
 
 echo $run_time $probability $client_count $test_num
 
+[ -d ../out/stab_client_$run_time\_$client_count\_$test_num/ ] || mkdir -p ../out/stab_client_$run_time\_$client_count\_$test_num/
+
 for j in `seq 1 $client_count`
 do
     echo "Starting Client" $j "out of" $client_count
 
-    ../src/rgcp_stability_client $run_time $probability $j STAB_TEST_$test_num $(cat ./tmp/rgcp_mw_ip) "8000" &# >> /dev/null &
+    ../src/rgcp_stability_client $run_time $probability $j STAB_TEST_$test_num $(cat ./tmp/rgcp_mw_ip) "8000" > ../out/stab_client_$run_time\_$client_count\_$test_num/client_$j &
     sleep .1
 done
 
