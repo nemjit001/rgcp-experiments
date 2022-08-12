@@ -1,4 +1,4 @@
-import os
+import os, math
 import pandas as pd
 import plotly.express as px
 
@@ -72,7 +72,7 @@ def make_histogram_tcp_rgcp(datapoint_dir: str):
 
     diff_series = tcp['time_ms'] - rgcp['time_ms']
 
-    sample_size = len(tcp['time_ms'])
+    sample_size = tcp['time_ms'].shape[0]
     repeats = 10000
 
     sample_means = pd.Series(dtype=float)
@@ -80,9 +80,19 @@ def make_histogram_tcp_rgcp(datapoint_dir: str):
         sample = diff_series.sample(sample_size, replace=True)
         sample_means = pd.concat([sample_means, pd.Series(sample.mean())])
 
+    sample_means.sort_values(inplace=True)
+    sample_means = sample_means.reset_index(drop=True)
+
     fig = px.histogram(sample_means, labels={'value': 'Average difference in RTT in milliseconds'})
     fig.update_layout(showlegend=False)
     fig.update_yaxes(title='Sample count')
+
+    means_len = sample_means.shape[0]
+    fifth_percentile_idx = int(math.floor(0.05 * means_len)) - 1
+    ninfifth_percentile_idx = int(math.ceil(0.95 * means_len)) - 1
+
+    print(f'5th percentile: {sample_means[fifth_percentile_idx]}')
+    print(f'95th percentile: {sample_means[ninfifth_percentile_idx]}')
 
     return fig
 
